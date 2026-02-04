@@ -381,7 +381,7 @@ contract TipJar {
 #### Core Modules
 
 ```
-packages/api/
+apps/api/
 ├── src/
 │   ├── index.ts                 # Hono app entry point
 │   ├── config.ts                # Environment config
@@ -1664,41 +1664,71 @@ Now we have:
 ```
 gitstream/
 ├── apps/
-│   └── web/                          # Next.js frontend + API routes
+│   ├── web/                          # Next.js frontend
+│   │   ├── app/                      # Next.js App Router
+│   │   │   ├── page.tsx              # Landing page
+│   │   │   ├── layout.tsx
+│   │   │   ├── globals.css
+│   │   │   ├── dashboard/
+│   │   │   ├── project/
+│   │   │   ├── claim/
+│   │   │   └── api/                  # API routes (GitHub OAuth callbacks)
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   ├── providers/
+│   │   ├── package.json
+│   │   ├── next.config.ts
+│   │   ├── tsconfig.json
+│   │   └── postcss.config.mjs
+│   │
+│   └── api/                          # Hono backend service
 │       ├── src/
-│       │   ├── app/                  # Next.js App Router
-│       │   │   ├── page.tsx          # Landing page
-│       │   │   ├── layout.tsx
-│       │   │   ├── dashboard/
-│       │   │   ├── project/
-│       │   │   ├── claim/
-│       │   │   └── api/              # API routes (GitHub OAuth callbacks)
-│       │   ├── components/
-│       │   ├── hooks/
+│       │   ├── index.ts              # Hono app entry point
+│       │   ├── config.ts             # Environment config
+│       │   ├── routes/
+│       │   │   ├── index.ts          # Route aggregator
+│       │   │   ├── projects.ts       # Project CRUD endpoints
+│       │   │   ├── tiers.ts          # Tier configuration endpoints
+│       │   │   ├── contributors.ts   # Contributor visibility endpoints
+│       │   │   ├── claims.ts         # Wallet claim endpoints
+│       │   │   ├── github.ts         # GitHub OAuth endpoints
+│       │   │   ├── streams.ts        # Payment stream endpoints
+│       │   │   └── webhooks.ts       # Contract event webhooks
+│       │   ├── middleware/
+│       │   │   ├── auth.ts           # Wallet/session authentication
+│       │   │   ├── github-auth.ts    # GitHub OAuth middleware
+│       │   │   ├── project-owner.ts  # Verify project ownership
+│       │   │   └── error-handler.ts  # Global error handling
+│       │   ├── services/
+│       │   │   ├── github/
+│       │   │   ├── tiers/
+│       │   │   ├── yellow/
+│       │   │   └── contracts/
+│       │   ├── db/
+│       │   │   ├── client.ts         # MongoDB client
+│       │   │   ├── models/
+│       │   │   └── indexes.ts
 │       │   └── lib/
+│       │       ├── errors.ts
+│       │       └── validation.ts
 │       ├── package.json
-│       └── next.config.js
+│       └── tsconfig.json
+│
+├── contracts/                        # Solidity contracts (Hardhat)
+│   ├── contracts/
+│   │   ├── GitStreamReceiver.sol
+│   │   └── interfaces/
+│   ├── scripts/
+│   │   └── deploy.ts
+│   ├── test/
+│   ├── ignition/
+│   │   └── modules/
+│   ├── hardhat.config.ts
+│   ├── package.json
+│   └── tsconfig.json
 │
 ├── packages/
-│   ├── api/                          # Hono backend service
-│   │   ├── src/
-│   │   │   ├── index.ts              # Hono app
-│   │   │   ├── routes/
-│   │   │   ├── services/
-│   │   │   ├── middleware/
-│   │   │   └── db/
-│   │   └── package.json
-│   │
-│   ├── contracts/                    # Solidity contracts (Hardhat)
-│   │   ├── contracts/
-│   │   │   ├── GitStreamReceiver.sol
-│   │   │   └── interfaces/
-│   │   ├── scripts/
-│   │   │   └── deploy.ts
-│   │   ├── test/
-│   │   ├── hardhat.config.ts
-│   │   └── package.json
-│   │
 │   ├── sdk/                          # GitStream SDK (for integrating apps)
 │   │   ├── src/
 │   │   │   ├── index.ts
@@ -1790,7 +1820,7 @@ pnpm install
 
 # Copy environment files
 cp apps/web/.env.example apps/web/.env.local
-cp packages/api/.env.example packages/api/.env
+cp apps/api/.env.example apps/api/.env
 
 # Configure environment variables
 # - GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
@@ -1803,8 +1833,8 @@ cp packages/api/.env.example packages/api/.env
 ### Step 2: Deploy GitStream Contracts
 
 ```bash
-# Navigate to contracts package
-cd packages/contracts
+# Navigate to contracts directory
+cd contracts
 
 # Compile contracts
 pnpm hardhat compile
@@ -2024,7 +2054,7 @@ docker run -d -p 27017:27017 --name gitstream-mongo mongo:7
 ```bash
 # 1. Sign up at Yellow Network developer portal
 # 2. Get testnet API keys
-# 3. Configure in packages/api/.env
+# 3. Configure in apps/api/.env
 #    YELLOW_API_KEY=your_key
 #    YELLOW_NETWORK_URL=https://testnet.yellow.org
 ```
