@@ -6,6 +6,12 @@ export const config = {
   // MongoDB
   mongodbUri: process.env.MONGODB_URI || "mongodb://localhost:27017/gitstream",
 
+  // Privy Auth
+  privy: {
+    appId: process.env.PRIVY_APP_ID || "",
+    appSecret: process.env.PRIVY_APP_SECRET || "",
+  },
+
   // GitHub OAuth
   github: {
     clientId: process.env.GITHUB_CLIENT_ID || "",
@@ -37,4 +43,13 @@ export const config = {
 
   // Frontend URL for CORS
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+
+  // API Keys for server-to-server auth (parsed from env as JSON array)
+  // Format: [{"key": "secret-key", "walletAddress": "0x..."}]
+  apiKeys: process.env.API_KEYS
+    ? (JSON.parse(process.env.API_KEYS) as { key: string; walletAddress: string }[])
+    : [],
+
+  // Allow x-wallet-address header auth (for dev/testing, disabled in production by default)
+  allowWalletHeader: process.env.ALLOW_WALLET_HEADER === "true",
 } as const;

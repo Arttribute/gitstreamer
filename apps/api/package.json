@@ -10,6 +10,7 @@
     "@erc7824/nitrolite": "^0.5.3",
     "@hono/node-server": "^1.19.9",
     "@octokit/rest": "^22.0.1",
+    "@privy-io/server-auth": "^1.32.5",
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0",
     "hono": "^4.11.7",
