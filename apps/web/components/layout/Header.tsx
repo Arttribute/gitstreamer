@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { GitBranch, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { ConnectButton } from "@/components/web3/ConnectButton";
+import { ConnectButton } from "@/components/web3/connect-button";
 
 export function Header() {
   const { authenticated } = usePrivy();
