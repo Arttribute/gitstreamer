@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, Project, ContributorWithMetrics } from "@/lib/api";
+import { useRegisterProject } from "@/hooks";
 
 export default function ProjectPage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function ProjectPage() {
   const { getAccessToken } = usePrivy();
   const { address } = useAccount();
   const projectId = params.id as string;
+  const { registerProject, isRegistering, error: registerError } = useRegisterProject();
 
   const [project, setProject] = useState<Project | null>(null);
   const [contributors, setContributors] = useState<ContributorWithMetrics[]>([]);
@@ -51,6 +53,28 @@ export default function ProjectPage() {
       await navigator.clipboard.writeText(project.projectIdBytes32);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleRegisterOnchain = async () => {
+    if (!project) return;
+
+    try {
+      const result = await registerProject(projectId, project.repoUrl);
+      if (result.success) {
+        // Update local project state
+        setProject((prev) =>
+          prev
+            ? {
+                ...prev,
+                onchainRegistered: true,
+                onchainTxHash: result.txHash,
+              }
+            : null
+        );
+      }
+    } catch (err) {
+      console.error("Failed to register onchain:", err);
     }
   };
 
@@ -162,25 +186,65 @@ export default function ProjectPage() {
               {project.repoOwner}/{project.repoName}
             </p>
             {project.projectIdBytes32 && (
-              <div className="mt-3 flex items-center gap-2">
-                <div className="rounded-md bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800">
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Contract Project ID</p>
-                  <code className="mt-1 block text-xs font-mono text-zinc-700 dark:text-zinc-300">
-                    {project.projectIdBytes32.slice(0, 10)}...{project.projectIdBytes32.slice(-8)}
-                  </code>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-md bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Contract Project ID</p>
+                    <code className="mt-1 block text-xs font-mono text-zinc-700 dark:text-zinc-300">
+                      {project.projectIdBytes32.slice(0, 10)}...{project.projectIdBytes32.slice(-8)}
+                    </code>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyProjectId}
+                    className="h-8 w-8 p-0"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copyProjectId}
-                  className="h-8 w-8 p-0"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
+
+                <div className="flex items-center gap-2">
+                  {project.onchainRegistered ? (
+                    <>
+                      <Badge variant="success" className="gap-1">
+                        <Check className="h-3 w-3" />
+                        Registered Onchain
+                      </Badge>
+                      {project.onchainTxHash && (
+                        <a
+                          href={`https://sepolia.basescan.org/tx/${project.onchainTxHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                        >
+                          View transaction
+                        </a>
+                      )}
+                    </>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <>
+                      <Badge variant="secondary">Not Registered Onchain</Badge>
+                      {isOwner && (
+                        <Button
+                          size="sm"
+                          onClick={handleRegisterOnchain}
+                          disabled={isRegistering}
+                          className="h-7 text-xs"
+                        >
+                          {isRegistering ? "Registering..." : "Register Onchain"}
+                        </Button>
+                      )}
+                    </>
                   )}
-                </Button>
+                </div>
+                {registerError && (
+                  <p className="text-xs text-red-500">{registerError}</p>
+                )}
               </div>
             )}
           </div>

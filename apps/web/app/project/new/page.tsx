@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api, GitHubRepo } from "@/lib/api";
+import { useRegisterProject } from "@/hooks";
 
 type Step = "connect" | "select-repo" | "configure";
 
@@ -27,6 +28,7 @@ const DEFAULT_TIERS: TierInput[] = [
 export default function NewProjectPage() {
   const { authenticated, ready, login, getAccessToken } = usePrivy();
   const router = useRouter();
+  const { registerProject, isRegistering } = useRegisterProject();
 
   const [step, setStep] = useState<Step>("connect");
   const [githubToken, setGithubToken] = useState<string | null>(null);
@@ -38,6 +40,7 @@ export default function NewProjectPage() {
   const [selectedBranch, setSelectedBranch] = useState<string>("");
   const [tiers, setTiers] = useState<TierInput[]>(DEFAULT_TIERS);
   const [treasuryShare, setTreasuryShare] = useState(10);
+  const [registerOnchain, setRegisterOnchain] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -151,9 +154,11 @@ export default function NewProjectPage() {
         throw new Error("Not authenticated");
       }
 
+      const repoUrl = `github.com/${selectedRepo.full_name}`;
+
       const result = await api.projects.create(
         {
-          repoUrl: `github.com/${selectedRepo.full_name}`,
+          repoUrl,
           branch: selectedBranch,
           tierConfig: {
             tiers: tiers,
@@ -170,6 +175,17 @@ export default function NewProjectPage() {
         } catch (refreshErr) {
           // Don't fail project creation if contributor refresh fails
           console.warn("Failed to fetch contributors:", refreshErr);
+        }
+      }
+
+      // Register onchain if selected
+      if (registerOnchain) {
+        try {
+          await registerProject(result.project._id, repoUrl);
+        } catch (regErr) {
+          // Don't fail project creation if onchain registration fails
+          console.warn("Failed to register onchain:", regErr);
+          // User can register later from the project page
         }
       }
 
@@ -458,13 +474,42 @@ export default function NewProjectPage() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Onchain Registration</CardTitle>
+              <CardDescription>
+                Register your project onchain to enable revenue streaming
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="registerOnchain"
+                  checked={registerOnchain}
+                  onChange={(e) => setRegisterOnchain(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-800"
+                />
+                <div className="flex-1">
+                  <label htmlFor="registerOnchain" className="cursor-pointer font-medium">
+                    Register project onchain now
+                  </label>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                    This will create a transaction to register your project on Base Sepolia.
+                    You can also register later from the project page if you skip this step.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="flex justify-end gap-4">
             <Button variant="outline" onClick={() => setStep("select-repo")}>
               Back
             </Button>
-            <Button onClick={handleCreateProject} disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Project
+            <Button onClick={handleCreateProject} disabled={loading || isRegistering}>
+              {(loading || isRegistering) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isRegistering ? "Registering Onchain..." : "Create Project"}
             </Button>
           </div>
         </div>

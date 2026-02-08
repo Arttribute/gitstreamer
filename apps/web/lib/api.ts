@@ -63,6 +63,9 @@ export interface Project {
     minDistributionAmount: string;
     escrowExpiryDays: number;
   };
+  onchainRegistered?: boolean;
+  onchainTxHash?: string;
+  onchainRegisteredAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -184,6 +187,13 @@ export const api = {
         accessToken,
       }),
 
+    markRegistered: (id: string, txHash: string, accessToken: string) =>
+      request<{ project: Project }>(`/api/projects/${id}/register`, {
+        method: "POST",
+        body: JSON.stringify({ txHash }),
+        accessToken,
+      }),
+
     delete: (id: string, accessToken: string) =>
       request<{ success: boolean }>(`/api/projects/${id}`, {
         method: "DELETE",
@@ -275,6 +285,7 @@ export const api = {
         method: "POST",
         accessToken,
         githubToken,
+        body: JSON.stringify({}),
       }),
 
     me: (accessToken: string) =>

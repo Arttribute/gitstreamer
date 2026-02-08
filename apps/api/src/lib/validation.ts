@@ -39,8 +39,8 @@ export const assignTierSchema = z.object({
 // Claim schemas
 export const claimContributorSchema = z.object({
   walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
-  signature: z.string(),
-  message: z.string(),
+  signature: z.string().optional(),
+  message: z.string().optional(),
 });
 
 // Ethereum address validation

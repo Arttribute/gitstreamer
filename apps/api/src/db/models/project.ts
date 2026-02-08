@@ -28,6 +28,9 @@ export interface Project {
   yellowSessionId?: string;
   tierConfig: TierConfig;
   settings: ProjectSettings;
+  onchainRegistered?: boolean;
+  onchainTxHash?: string;
+  onchainRegisteredAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

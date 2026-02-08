@@ -68,6 +68,7 @@ projects.post("/", async (c) => {
         _id: result.insertedId.toString(),
         ...project,
         projectIdBytes32,
+        onchainRegistered: false,
       },
     },
     201
@@ -99,6 +100,9 @@ projects.get("/", async (c) => {
       settings: p.settings,
       receiverContract: p.receiverContract,
       yellowSessionId: p.yellowSessionId,
+      onchainRegistered: p.onchainRegistered,
+      onchainTxHash: p.onchainTxHash,
+      onchainRegisteredAt: p.onchainRegisteredAt,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     })),
@@ -136,6 +140,9 @@ projects.get("/:id", async (c) => {
       settings: project.settings,
       receiverContract: project.receiverContract,
       yellowSessionId: project.yellowSessionId,
+      onchainRegistered: project.onchainRegistered,
+      onchainTxHash: project.onchainTxHash,
+      onchainRegisteredAt: project.onchainRegisteredAt,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     },
@@ -243,6 +250,56 @@ projects.put("/:id/tiers", projectOwnerMiddleware, async (c) => {
       settings: updatedProject!.settings,
       receiverContract: updatedProject!.receiverContract,
       yellowSessionId: updatedProject!.yellowSessionId,
+      createdAt: updatedProject!.createdAt,
+      updatedAt: updatedProject!.updatedAt,
+    },
+  });
+});
+
+// Mark project as registered onchain (owner only)
+projects.post("/:id/register", projectOwnerMiddleware, async (c) => {
+  const project = c.get("project") as Project;
+  const body = await c.req.json();
+
+  if (!body.txHash) {
+    throw new ValidationError("Transaction hash is required");
+  }
+
+  const db = await getDatabase();
+
+  await db.collection<Project>("projects").updateOne(
+    { _id: project._id },
+    {
+      $set: {
+        onchainRegistered: true,
+        onchainTxHash: body.txHash,
+        onchainRegisteredAt: new Date(),
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  const updatedProject = await db.collection<Project>("projects").findOne({
+    _id: project._id,
+  });
+
+  return c.json({
+    project: {
+      id: updatedProject!._id?.toString(),
+      _id: updatedProject!._id?.toString(),
+      repoUrl: updatedProject!.repoUrl,
+      repoOwner: updatedProject!.repoOwner,
+      repoName: updatedProject!.repoName,
+      branch: updatedProject!.branch,
+      ownerAddress: updatedProject!.ownerAddress,
+      projectIdBytes32: updatedProject!.projectIdBytes32,
+      tierConfig: updatedProject!.tierConfig,
+      settings: updatedProject!.settings,
+      receiverContract: updatedProject!.receiverContract,
+      yellowSessionId: updatedProject!.yellowSessionId,
+      onchainRegistered: updatedProject!.onchainRegistered,
+      onchainTxHash: updatedProject!.onchainTxHash,
+      onchainRegisteredAt: updatedProject!.onchainRegisteredAt,
       createdAt: updatedProject!.createdAt,
       updatedAt: updatedProject!.updatedAt,
     },

@@ -10,10 +10,21 @@ const claims = new Hono();
 claims.post("/", authMiddleware, githubAuthMiddleware, async (c) => {
     const walletAddress = c.get("walletAddress");
     const githubToken = c.get("githubToken");
-    const body = await c.req.json();
+    // Parse body (may be empty)
+    let body = {};
+    try {
+        const text = await c.req.text();
+        if (text) {
+            body = JSON.parse(text);
+        }
+    }
+    catch {
+        // Empty or invalid body is okay - we get wallet from auth middleware
+        body = {};
+    }
     const parsed = claimContributorSchema.parse(body);
-    // Verify wallet address matches authenticated user
-    if (parsed.walletAddress.toLowerCase() !== walletAddress) {
+    // Verify wallet address if provided in body
+    if (parsed?.walletAddress && parsed.walletAddress.toLowerCase() !== walletAddress) {
         throw new ConflictError("Wallet address mismatch");
     }
     // Get GitHub user from token

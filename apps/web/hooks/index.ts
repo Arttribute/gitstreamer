@@ -34,3 +34,5 @@ export {
   useGitHubRepos,
   useGitHubBranches,
 } from "./useGitHub";
+
+export { useRegisterProject } from "./useRegisterProject";
