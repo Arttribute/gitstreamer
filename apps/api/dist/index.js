@@ -14,7 +14,19 @@ const app = new Hono();
 app.use("*", logger());
 app.use("*", prettyJSON());
 app.use("*", cors({
-    origin: config.frontendUrl,
+    origin: (origin) => {
+        // Allow requests with no origin (like mobile apps or Postman)
+        if (!origin)
+            return config.frontendUrl;
+        // Check if origin is in allowed list
+        if (config.allowedOrigins.includes(origin))
+            return origin;
+        // Allow Vercel preview deployments (e.g., https://gitstreamer-*.vercel.app)
+        if (origin.match(/^https:\/\/.*\.vercel\.app$/))
+            return origin;
+        // Default to first allowed origin
+        return config.frontendUrl;
+    },
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-wallet-address", "x-github-token"],

@@ -12,6 +12,8 @@ import {
   Settings,
   ExternalLink,
   ArrowLeft,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,8 +42,17 @@ export default function ProjectPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoFetching, setAutoFetching] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const isOwner = project?.ownerAddress.toLowerCase() === address?.toLowerCase();
+
+  const copyProjectId = async () => {
+    if (project?.projectIdBytes32) {
+      await navigator.clipboard.writeText(project.projectIdBytes32);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -150,6 +161,28 @@ export default function ProjectPage() {
             <p className="mt-2 text-zinc-500 dark:text-zinc-400">
               {project.repoOwner}/{project.repoName}
             </p>
+            {project.projectIdBytes32 && (
+              <div className="mt-3 flex items-center gap-2">
+                <div className="rounded-md bg-zinc-100 px-3 py-1.5 dark:bg-zinc-800">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Contract Project ID</p>
+                  <code className="mt-1 block text-xs font-mono text-zinc-700 dark:text-zinc-300">
+                    {project.projectIdBytes32.slice(0, 10)}...{project.projectIdBytes32.slice(-8)}
+                  </code>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyProjectId}
+                  className="h-8 w-8 p-0"
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <a

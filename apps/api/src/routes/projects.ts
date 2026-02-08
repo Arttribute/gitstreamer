@@ -13,6 +13,7 @@ import {
   tierConfigSchema,
   DEFAULT_TIER_CONFIG,
 } from "../lib/validation.js";
+import { computeProjectId } from "../lib/contract-utils.js";
 
 const projects = new Hono<{ Variables: ContextVariables }>();
 
@@ -43,12 +44,15 @@ projects.post("/", async (c) => {
   }
 
   const now = new Date();
+  const projectIdBytes32 = computeProjectId(parsed.repoUrl, walletAddress);
+
   const project: Project = {
     repoUrl: parsed.repoUrl,
     repoOwner: repoInfo.owner,
     repoName: repoInfo.name,
     branch: parsed.branch,
     ownerAddress: walletAddress,
+    projectIdBytes32,
     tierConfig: parsed.tierConfig || DEFAULT_TIER_CONFIG,
     settings: DEFAULT_PROJECT_SETTINGS,
     createdAt: now,
@@ -63,6 +67,7 @@ projects.post("/", async (c) => {
         id: result.insertedId.toString(),
         _id: result.insertedId.toString(),
         ...project,
+        projectIdBytes32,
       },
     },
     201
@@ -89,6 +94,7 @@ projects.get("/", async (c) => {
       repoName: p.repoName,
       branch: p.branch,
       ownerAddress: p.ownerAddress,
+      projectIdBytes32: p.projectIdBytes32,
       tierConfig: p.tierConfig,
       settings: p.settings,
       receiverContract: p.receiverContract,
@@ -125,6 +131,7 @@ projects.get("/:id", async (c) => {
       repoName: project.repoName,
       branch: project.branch,
       ownerAddress: project.ownerAddress,
+      projectIdBytes32: project.projectIdBytes32,
       tierConfig: project.tierConfig,
       settings: project.settings,
       receiverContract: project.receiverContract,
@@ -180,6 +187,7 @@ projects.put("/:id", projectOwnerMiddleware, async (c) => {
       repoName: updatedProject!.repoName,
       branch: updatedProject!.branch,
       ownerAddress: updatedProject!.ownerAddress,
+      projectIdBytes32: updatedProject!.projectIdBytes32,
       tierConfig: updatedProject!.tierConfig,
       settings: updatedProject!.settings,
       receiverContract: updatedProject!.receiverContract,
@@ -230,6 +238,7 @@ projects.put("/:id/tiers", projectOwnerMiddleware, async (c) => {
       repoName: updatedProject!.repoName,
       branch: updatedProject!.branch,
       ownerAddress: updatedProject!.ownerAddress,
+      projectIdBytes32: updatedProject!.projectIdBytes32,
       tierConfig: updatedProject!.tierConfig,
       settings: updatedProject!.settings,
       receiverContract: updatedProject!.receiverContract,

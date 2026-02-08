@@ -33,8 +33,12 @@ export const config = {
     rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
     // JWT secret for session tokens
     jwtSecret: process.env.JWT_SECRET || "dev-secret-change-in-production",
-    // Frontend URL for CORS
+    // Frontend URL(s) for CORS (comma-separated for multiple origins)
     frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+    // Parse allowed origins (supports comma-separated list)
+    allowedOrigins: process.env.FRONTEND_URL
+        ? process.env.FRONTEND_URL.split(",").map((url) => url.trim())
+        : ["http://localhost:3000"],
     // API Keys for server-to-server auth (parsed from env as JSON array)
     // Format: [{"key": "secret-key", "walletAddress": "0x..."}]
     apiKeys: process.env.API_KEYS
