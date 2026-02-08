@@ -7,8 +7,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:local": "hardhat ignition deploy ignition/modules/GitStreamReceiver.ts",
-    "deploy:base-sepolia": "hardhat ignition deploy ignition/modules/GitStreamReceiver.ts --network baseSepolia",
-    "deploy:base": "hardhat ignition deploy ignition/modules/GitStreamReceiver.ts --network base",
+    "deploy:base-sepolia": "tsx scripts/deploy-and-update-env.ts baseSepolia",
+    "deploy:base": "tsx scripts/deploy-and-update-env.ts base",
     "clean": "hardhat clean"
   },
   "keywords": [],
@@ -21,8 +21,10 @@
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.2",
     "@openzeppelin/contracts": "^5.4.0",
     "@types/node": "^22.19.7",
+    "dotenv": "^17.2.3",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.1.5",
+    "tsx": "^4.21.0",
     "typescript": "~5.8.3",
     "viem": "^2.45.1"
   }

@@ -7,8 +7,15 @@ import { config } from "../config.js";
 // Initialize Privy client lazily
 let privyClient: PrivyClient | null = null;
 
-function getPrivyClient(): PrivyClient | null {
-  if (!privyClient && config.privy.appId && config.privy.appSecret) {
+function getPrivyClient(): PrivyClient {
+  if (!config.privy.appId || !config.privy.appSecret) {
+    throw new Error(
+      "Privy configuration missing. Please set PRIVY_APP_ID and PRIVY_APP_SECRET in your .env file. " +
+      "Get these values from https://dashboard.privy.io"
+    );
+  }
+
+  if (!privyClient) {
     privyClient = new PrivyClient(config.privy.appId, config.privy.appSecret);
   }
   return privyClient;
@@ -27,10 +34,8 @@ interface AuthResult {
  * Verify Privy JWT token
  */
 async function verifyPrivyToken(token: string): Promise<AuthResult | null> {
-  const client = getPrivyClient();
-  if (!client) return null;
-
   try {
+    const client = getPrivyClient();
     const verifiedClaims = await client.verifyAuthToken(token);
     const user = await client.getUser(verifiedClaims.userId);
 
@@ -39,6 +44,7 @@ async function verifyPrivyToken(token: string): Promise<AuthResult | null> {
     );
 
     if (!walletAccount || !("address" in walletAccount)) {
+      console.error("Privy user has no linked wallet account");
       return null;
     }
 
@@ -47,7 +53,9 @@ async function verifyPrivyToken(token: string): Promise<AuthResult | null> {
       userId: verifiedClaims.userId,
       authMethod: "privy",
     };
-  } catch {
+  } catch (error) {
+    // Log detailed error for debugging
+    console.error("Privy token verification failed:", error instanceof Error ? error.message : error);
     return null;
   }
 }

@@ -20,10 +20,13 @@ export const config = {
       process.env.GITHUB_CALLBACK_URL || "http://localhost:3000/api/auth/github/callback",
   },
 
-  // Yellow Network
+  // Yellow Network (Nitrolite state channels)
   yellow: {
-    apiKey: process.env.YELLOW_API_KEY || "",
-    networkUrl: process.env.YELLOW_NETWORK_URL || "https://testnet.yellow.org",
+    // Private key for the wallet that manages Yellow Network state channels
+    // This wallet will hold funds and sign channel state updates
+    privateKey: process.env.YELLOW_PRIVATE_KEY || "",
+    // Use sandbox (testnet) or production ClearNode
+    useSandbox: process.env.YELLOW_USE_SANDBOX !== "false", // defaults to true
   },
 
   // Contract addresses

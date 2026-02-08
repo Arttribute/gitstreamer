@@ -25,8 +25,13 @@ type MessageHandler = (message: any) => void;
 type HexString = `0x${string}`;
 
 /**
- * Yellow Network Client using Nitrolite SDK
+ * Yellow Network Client using Nitrolite SDK (ERC-7824 state channels)
  * Manages WebSocket connection to ClearNode and handles authentication
+ *
+ * Note: No API key is required. Authentication is done via wallet signatures.
+ * The client connects to ClearNode WebSocket endpoints:
+ * - Sandbox (testnet): wss://clearnet-sandbox.yellow.com/ws
+ * - Production: wss://clearnet.yellow.com/ws
  */
 export class YellowClient {
   private ws: WebSocket | null = null;
@@ -39,6 +44,10 @@ export class YellowClient {
   private maxReconnectAttempts: number = 5;
   private reconnectDelay: number = 1000;
 
+  /**
+   * Create a Yellow Network client
+   * @param privateKey - Wallet private key (hex string with or without 0x prefix)
+   */
   constructor(privateKey: string) {
     this.wallet = new ethers.Wallet(privateKey);
   }
