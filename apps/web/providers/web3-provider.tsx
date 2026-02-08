@@ -19,7 +19,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
             staleTime: 60 * 1000,
           },
         },
-      })
+      }),
   );
 
   // During build time or when Privy app ID is not configured,

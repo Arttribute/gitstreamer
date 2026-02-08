@@ -137,11 +137,52 @@ contributors.post(
       await db.collection<ContributorMetrics>("contributorMetrics").insertOne(metricsRecord);
     }
 
+    // Fetch and return updated contributors list with metrics
+    const contributorsList = await db
+      .collection<Contributor>("contributors")
+      .find({ projectId: project._id })
+      .toArray();
+
+    const contributorsWithMetrics = await Promise.all(
+      contributorsList.map(async (contributor) => {
+        const latestMetrics = await db
+          .collection<ContributorMetrics>("contributorMetrics")
+          .findOne(
+            { projectId: project._id, githubUsername: contributor.githubUsername },
+            { sort: { calculatedAt: -1 } }
+          );
+
+        return {
+          _id: contributor._id?.toString(),
+          projectId: contributor.projectId.toString(),
+          githubUsername: contributor.githubUsername,
+          githubId: contributor.githubId,
+          githubEmail: contributor.githubEmail,
+          walletAddress: contributor.walletAddress,
+          tier: contributor.tier,
+          tierAssignedAt: contributor.tierAssignedAt,
+          tierAssignedBy: contributor.tierAssignedBy,
+          claimedAt: contributor.claimedAt,
+          createdAt: contributor.createdAt,
+          latestMetrics: latestMetrics ? {
+            _id: latestMetrics._id?.toString(),
+            projectId: latestMetrics.projectId.toString(),
+            githubUsername: latestMetrics.githubUsername,
+            calculatedAt: latestMetrics.calculatedAt,
+            commitHash: latestMetrics.commitHash,
+            metrics: latestMetrics.metrics,
+            suggestedTier: latestMetrics.suggestedTier,
+          } : undefined,
+        };
+      })
+    );
+
     return c.json({
       success: true,
       message: "Contributors refreshed",
       count: stats.length,
       commitHash: commitSha,
+      contributors: contributorsWithMetrics,
     });
   }
 );

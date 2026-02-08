@@ -27,24 +27,33 @@ contributors.get("/project/:id", authMiddleware, async (c) => {
         .toArray();
     // Get latest metrics for each contributor
     const contributorsWithMetrics = await Promise.all(contributorsList.map(async (contributor) => {
-        const metrics = await db
+        const latestMetrics = await db
             .collection("contributorMetrics")
             .findOne({ projectId: new ObjectId(projectId), githubUsername: contributor.githubUsername }, { sort: { calculatedAt: -1 } });
         return {
-            id: contributor._id?.toString(),
+            _id: contributor._id?.toString(),
+            projectId: contributor.projectId.toString(),
             githubUsername: contributor.githubUsername,
             githubId: contributor.githubId,
+            githubEmail: contributor.githubEmail,
             walletAddress: contributor.walletAddress,
             tier: contributor.tier,
             tierAssignedAt: contributor.tierAssignedAt,
-            claimed: !!contributor.walletAddress,
+            tierAssignedBy: contributor.tierAssignedBy,
             claimedAt: contributor.claimedAt,
-            metrics: metrics?.metrics || null,
-            suggestedTier: metrics?.suggestedTier || null,
+            createdAt: contributor.createdAt,
+            latestMetrics: latestMetrics ? {
+                _id: latestMetrics._id?.toString(),
+                projectId: latestMetrics.projectId.toString(),
+                githubUsername: latestMetrics.githubUsername,
+                calculatedAt: latestMetrics.calculatedAt,
+                commitHash: latestMetrics.commitHash,
+                metrics: latestMetrics.metrics,
+                suggestedTier: latestMetrics.suggestedTier,
+            } : undefined,
         };
     }));
     return c.json({
-        projectId,
         contributors: contributorsWithMetrics,
     });
 });
@@ -83,11 +92,44 @@ contributors.post("/project/:id/refresh", authMiddleware, projectOwnerMiddleware
         };
         await db.collection("contributorMetrics").insertOne(metricsRecord);
     }
+    // Fetch and return updated contributors list with metrics
+    const contributorsList = await db
+        .collection("contributors")
+        .find({ projectId: project._id })
+        .toArray();
+    const contributorsWithMetrics = await Promise.all(contributorsList.map(async (contributor) => {
+        const latestMetrics = await db
+            .collection("contributorMetrics")
+            .findOne({ projectId: project._id, githubUsername: contributor.githubUsername }, { sort: { calculatedAt: -1 } });
+        return {
+            _id: contributor._id?.toString(),
+            projectId: contributor.projectId.toString(),
+            githubUsername: contributor.githubUsername,
+            githubId: contributor.githubId,
+            githubEmail: contributor.githubEmail,
+            walletAddress: contributor.walletAddress,
+            tier: contributor.tier,
+            tierAssignedAt: contributor.tierAssignedAt,
+            tierAssignedBy: contributor.tierAssignedBy,
+            claimedAt: contributor.claimedAt,
+            createdAt: contributor.createdAt,
+            latestMetrics: latestMetrics ? {
+                _id: latestMetrics._id?.toString(),
+                projectId: latestMetrics.projectId.toString(),
+                githubUsername: latestMetrics.githubUsername,
+                calculatedAt: latestMetrics.calculatedAt,
+                commitHash: latestMetrics.commitHash,
+                metrics: latestMetrics.metrics,
+                suggestedTier: latestMetrics.suggestedTier,
+            } : undefined,
+        };
+    }));
     return c.json({
         success: true,
         message: "Contributors refreshed",
         count: stats.length,
         commitHash: commitSha,
+        contributors: contributorsWithMetrics,
     });
 });
 // Get specific contributor details
@@ -116,16 +158,23 @@ contributors.get("/project/:id/:username", authMiddleware, async (c) => {
         .limit(10)
         .toArray();
     return c.json({
-        id: contributor._id?.toString(),
-        githubUsername: contributor.githubUsername,
-        githubId: contributor.githubId,
-        walletAddress: contributor.walletAddress,
-        tier: contributor.tier,
-        tierAssignedAt: contributor.tierAssignedAt,
-        tierAssignedBy: contributor.tierAssignedBy,
-        claimed: !!contributor.walletAddress,
-        claimedAt: contributor.claimedAt,
+        contributor: {
+            _id: contributor._id?.toString(),
+            projectId: contributor.projectId.toString(),
+            githubUsername: contributor.githubUsername,
+            githubId: contributor.githubId,
+            githubEmail: contributor.githubEmail,
+            walletAddress: contributor.walletAddress,
+            tier: contributor.tier,
+            tierAssignedAt: contributor.tierAssignedAt,
+            tierAssignedBy: contributor.tierAssignedBy,
+            claimedAt: contributor.claimedAt,
+            createdAt: contributor.createdAt,
+        },
         metricsHistory: metricsHistory.map((m) => ({
+            _id: m._id?.toString(),
+            projectId: m.projectId.toString(),
+            githubUsername: m.githubUsername,
             calculatedAt: m.calculatedAt,
             commitHash: m.commitHash,
             metrics: m.metrics,

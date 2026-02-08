@@ -39,6 +39,7 @@ export default function ProjectPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [autoFetching, setAutoFetching] = useState(false);
 
   const isOwner = project?.ownerAddress.toLowerCase() === address?.toLowerCase();
 
@@ -64,7 +65,39 @@ export default function ProjectPage() {
     if (projectId) {
       fetchData();
     }
-  }, [projectId, getAccessToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  // Auto-fetch contributors if empty (only for project owners)
+  useEffect(() => {
+    async function autoFetchContributors() {
+      if (!isOwner || !project || contributors.length > 0 || autoFetching) {
+        return;
+      }
+
+      const githubToken = localStorage.getItem("github_token");
+      if (!githubToken) {
+        return;
+      }
+
+      setAutoFetching(true);
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+
+        const result = await api.contributors.refresh(projectId, accessToken, githubToken);
+        setContributors(result.contributors);
+      } catch (err) {
+        console.warn("Auto-fetch contributors failed:", err);
+        // Don't show error to user, let them manually refresh if needed
+      } finally {
+        setAutoFetching(false);
+      }
+    }
+
+    autoFetchContributors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, project, contributors.length, autoFetching, projectId]);
 
   if (loading) {
     return (
@@ -283,9 +316,20 @@ export default function ProjectPage() {
         </CardHeader>
         <CardContent>
           {contributors.length === 0 ? (
-            <p className="text-zinc-500">
-              No contributors found. Refresh to analyze the repository.
-            </p>
+            <div className="py-8 text-center">
+              {autoFetching ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900 dark:border-zinc-800 dark:border-t-zinc-100" />
+                  <p className="text-sm text-zinc-500">
+                    Analyzing repository contributors...
+                  </p>
+                </div>
+              ) : (
+                <p className="text-zinc-500">
+                  No contributors found. {isOwner && "Click 'View All' to refresh from GitHub."}
+                </p>
+              )}
+            </div>
           ) : (
             <div className="space-y-3">
               {contributors.slice(0, 5).map((contributor) => (

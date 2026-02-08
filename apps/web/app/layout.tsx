@@ -19,7 +19,14 @@ export const metadata: Metadata = {
   title: "GitStream - Revenue Streaming for Code Contributors",
   description:
     "Tier-based revenue streaming platform that distributes app revenue to code contributors based on their role.",
-  keywords: ["git", "revenue", "streaming", "contributors", "open source", "payments"],
+  keywords: [
+    "git",
+    "revenue",
+    "streaming",
+    "contributors",
+    "open source",
+    "payments",
+  ],
 };
 
 export default function RootLayout({
@@ -28,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100`}
       >

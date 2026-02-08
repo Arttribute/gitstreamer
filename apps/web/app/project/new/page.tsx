@@ -47,9 +47,18 @@ export default function NewProjectPage() {
     const token = params.get("github_token");
     if (token) {
       setGithubToken(token);
+      // Save immediately to localStorage
+      localStorage.setItem("github_token", token);
       setStep("select-repo");
       // Clean URL
       window.history.replaceState({}, "", "/project/new");
+    } else {
+      // Check if we already have a token in localStorage
+      const storedToken = localStorage.getItem("github_token");
+      if (storedToken) {
+        setGithubToken(storedToken);
+        setStep("select-repo");
+      }
     }
   }, []);
 
@@ -153,6 +162,16 @@ export default function NewProjectPage() {
         },
         accessToken
       );
+
+      // Automatically fetch contributors if we have a GitHub token
+      if (githubToken) {
+        try {
+          await api.contributors.refresh(result.project._id, accessToken, githubToken);
+        } catch (refreshErr) {
+          // Don't fail project creation if contributor refresh fails
+          console.warn("Failed to fetch contributors:", refreshErr);
+        }
+      }
 
       router.push(`/project/${result.project._id}`);
     } catch (err) {

@@ -14,6 +14,8 @@ import {
   Calendar,
   CheckCircle,
   Loader2,
+  GitBranch,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +36,9 @@ export default function ContributorsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigningTier, setAssigningTier] = useState<string | null>(null);
+  const [autoFetching, setAutoFetching] = useState(false);
+  const [githubUser, setGithubUser] = useState<{ login: string; avatar_url: string } | null>(null);
+  const [loadingGithubUser, setLoadingGithubUser] = useState(true);
 
   const isOwner = project?.ownerAddress.toLowerCase() === address?.toLowerCase();
 
@@ -65,14 +70,87 @@ export default function ContributorsPage() {
     if (projectId) {
       fetchData();
     }
-  }, [projectId, getAccessToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  // Handle GitHub OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("github_token");
+    if (token) {
+      // Save immediately to localStorage
+      localStorage.setItem("github_token", token);
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+      // Reload to fetch contributors
+      window.location.reload();
+    }
+  }, []);
+
+  // Fetch GitHub user info if token exists
+  useEffect(() => {
+    async function fetchGithubUser() {
+      setLoadingGithubUser(true);
+      const token = localStorage.getItem("github_token");
+      if (!token) {
+        setGithubUser(null);
+        setLoadingGithubUser(false);
+        return;
+      }
+
+      try {
+        const data = await api.github.user(token);
+        setGithubUser(data.user);
+      } catch (err) {
+        // Token might be expired
+        console.warn("GitHub token expired or invalid");
+        localStorage.removeItem("github_token");
+        setGithubUser(null);
+      } finally {
+        setLoadingGithubUser(false);
+      }
+    }
+
+    fetchGithubUser();
+  }, []);
+
+  // Auto-fetch contributors if empty (only for project owners)
+  useEffect(() => {
+    async function autoFetchContributors() {
+      if (!isOwner || !project || contributors.length > 0 || autoFetching || refreshing) {
+        return;
+      }
+
+      const githubToken = localStorage.getItem("github_token");
+      if (!githubToken) {
+        return;
+      }
+
+      setAutoFetching(true);
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+
+        const result = await api.contributors.refresh(projectId, accessToken, githubToken);
+        setContributors(result.contributors);
+      } catch (err) {
+        console.warn("Auto-fetch contributors failed:", err);
+        // Don't show error to user, let them manually refresh if needed
+      } finally {
+        setAutoFetching(false);
+      }
+    }
+
+    autoFetchContributors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner, project, contributors.length, autoFetching, refreshing, projectId]);
 
   const handleRefresh = async () => {
     if (!isOwner) return;
 
     const githubToken = getGithubToken();
     if (!githubToken) {
-      setError("Please connect your GitHub account first");
+      // Don't show error, the banner will guide them to connect
       return;
     }
 
@@ -124,6 +202,16 @@ export default function ContributorsPage() {
     } finally {
       setAssigningTier(null);
     }
+  };
+
+  const handleConnectGitHub = () => {
+    const authUrl = api.github.authUrl(`${window.location.origin}/project/${projectId}/contributors`);
+    window.location.href = authUrl;
+  };
+
+  const handleDisconnectGitHub = () => {
+    localStorage.removeItem("github_token");
+    setGithubUser(null);
   };
 
   if (loading) {
@@ -196,6 +284,68 @@ export default function ContributorsPage() {
         </div>
       )}
 
+      {/* GitHub Connection Status */}
+      {isOwner && !loadingGithubUser && (
+        <div className="mb-6">
+          {githubUser ? (
+            <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-900/20">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={githubUser.avatar_url}
+                      alt={githubUser.login}
+                      className="h-8 w-8 rounded-full"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        GitHub Connected
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        @{githubUser.login}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDisconnectGitHub}
+                  className="text-green-700 hover:text-green-900 dark:text-green-400 dark:hover:text-green-100"
+                >
+                  Disconnect
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-900/20">
+              <CardContent className="flex items-center justify-between px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-yellow-900 dark:text-yellow-100">
+                      GitHub Not Connected
+                    </p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                      Connect GitHub to fetch and refresh contributors
+                    </p>
+                  </div>
+                </div>
+                <Button onClick={handleConnectGitHub} className="ml-4 gap-2">
+                  <GitBranch className="h-4 w-4" />
+                  Connect GitHub
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Tier summary */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {project.tierConfig.tiers.map((tier) => {
@@ -229,13 +379,29 @@ export default function ContributorsPage() {
         <CardContent>
           {contributors.length === 0 ? (
             <div className="py-8 text-center">
-              <Users className="mx-auto h-12 w-12 text-zinc-300" />
-              <p className="mt-4 text-zinc-500">No contributors found</p>
-              {isOwner && (
-                <Button onClick={handleRefresh} className="mt-4 gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Analyze Repository
-                </Button>
+              {autoFetching ? (
+                <div className="flex flex-col items-center gap-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-zinc-300" />
+                  <div>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                      Analyzing repository...
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      Fetching contributor data from GitHub
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Users className="mx-auto h-12 w-12 text-zinc-300" />
+                  <p className="mt-4 text-zinc-500">No contributors found</p>
+                  {isOwner && (
+                    <Button onClick={handleRefresh} className="mt-4 gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      Analyze Repository
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           ) : (

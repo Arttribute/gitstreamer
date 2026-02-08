@@ -59,11 +59,15 @@ projects.get("/", async (c) => {
     return c.json({
         projects: userProjects.map((p) => ({
             id: p._id?.toString(),
+            _id: p._id?.toString(),
             repoUrl: p.repoUrl,
             repoOwner: p.repoOwner,
             repoName: p.repoName,
             branch: p.branch,
+            ownerAddress: p.ownerAddress,
             tierConfig: p.tierConfig,
+            settings: p.settings,
+            receiverContract: p.receiverContract,
             yellowSessionId: p.yellowSessionId,
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
