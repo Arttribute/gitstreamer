@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
-import { GitBranch, Users, DollarSign, Zap, ArrowRight, CheckCircle } from "lucide-react";
+import {
+  GitBranch,
+  Users,
+  DollarSign,
+  Zap,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -34,10 +41,26 @@ const features = [
 ];
 
 const tiers = [
-  { name: "Core Maintainers", share: 40, description: "Long-term stewards, major decisions" },
-  { name: "Active Contributors", share: 35, description: "Regular, significant contributions" },
-  { name: "Community", share: 15, description: "Occasional contributors, bug fixes" },
-  { name: "Treasury", share: 10, description: "Infrastructure, bounties, growth" },
+  {
+    name: "Core Maintainers",
+    share: 40,
+    description: "Long-term stewards, major decisions",
+  },
+  {
+    name: "Active Contributors",
+    share: 35,
+    description: "Regular, significant contributions",
+  },
+  {
+    name: "Community",
+    share: 15,
+    description: "Occasional contributors, bug fixes",
+  },
+  {
+    name: "Treasury",
+    share: 10,
+    description: "Infrastructure, bounties, growth",
+  },
 ];
 
 export default function Home() {
@@ -51,7 +74,9 @@ export default function Home() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2 dark:bg-zinc-800">
               <GitBranch className="h-4 w-4" />
-              <span className="text-sm font-medium">Tier-Based Revenue Streaming</span>
+              <span className="text-sm font-medium">
+                Tier-Based Revenue Streaming
+              </span>
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
@@ -63,8 +88,9 @@ export default function Home() {
             </h1>
 
             <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 sm:text-xl">
-              GitStream distributes app revenue to code contributors based on their role, not their
-              line count. Connect your repo, assign tiers, stream payments.
+              GitStream distributes app revenue to code contributors based on
+              their contributions. Connect your repo, assign tiers, stream
+              payments.
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -98,9 +124,9 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold">The Problem</h2>
               <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-                Code contributors don&apos;t share in the revenue their work generates. Open source
-                maintainers build critical infrastructure and earn nothing. Pay-per-line creates
-                perverse incentives.
+                Code contributors don&apos;t share in the revenue their work
+                generates. Open source maintainers build critical infrastructure
+                and earn nothing. Pay-per-line creates perverse incentives.
               </p>
               <div className="mt-6 space-y-3">
                 <div className="flex items-start gap-3 text-sm text-zinc-500 dark:text-zinc-400">
@@ -120,9 +146,9 @@ export default function Home() {
             <div>
               <h2 className="text-2xl font-bold">The Solution</h2>
               <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-                GitStream uses tier-based revenue sharing. Contributors are assigned to tiers by
-                project owners based on role and commitment. Everyone benefits when the project
-                succeeds.
+                GitStream uses tier-based revenue sharing. Contributors are
+                assigned to tiers by project owners based on role and
+                commitment. Everyone benefits when the project succeeds.
               </p>
               <div className="mt-6 space-y-3">
                 <div className="flex items-start gap-3 text-sm">
@@ -149,7 +175,8 @@ export default function Home() {
           <div className="text-center">
             <h2 className="text-3xl font-bold">Tier-Based Revenue Model</h2>
             <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-              Contributors are assigned to tiers based on their role, not their output metrics.
+              Contributors are assigned to tiers based on their role, not their
+              output metrics.
             </p>
           </div>
 
@@ -161,7 +188,9 @@ export default function Home() {
                     {tier.share}%
                   </div>
                   <h3 className="mt-4 font-semibold">{tier.name}</h3>
-                  <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{tier.description}</p>
+                  <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                    {tier.description}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -175,7 +204,8 @@ export default function Home() {
           <div className="text-center">
             <h2 className="text-3xl font-bold">How It Works</h2>
             <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-              Git data provides visibility. Humans provide judgment. Tiers provide stability.
+              Git data provides visibility. Humans provide judgment. Tiers
+              provide stability.
             </p>
           </div>
 
@@ -201,9 +231,12 @@ export default function Home() {
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-zinc-900 px-8 py-16 text-center dark:bg-zinc-800">
-            <h2 className="text-3xl font-bold text-white">Ready to stream revenue?</h2>
+            <h2 className="text-3xl font-bold text-white">
+              Ready to stream revenue?
+            </h2>
             <p className="mt-4 text-zinc-300">
-              Connect your repository and start distributing revenue to your contributors today.
+              Connect your repository and start distributing revenue to your
+              contributors today.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               {authenticated ? (

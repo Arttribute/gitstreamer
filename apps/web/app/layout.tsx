@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GitStream - Revenue Streaming for Code Contributors",
   description:
-    "Tier-based revenue streaming platform that distributes app revenue to code contributors based on their role.",
+    "Tier-based revenue streaming platform that distributes app revenue to code contributors based on their contributions.",
   keywords: [
     "git",
     "revenue",

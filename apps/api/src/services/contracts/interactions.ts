@@ -4,8 +4,6 @@ import {
   http,
   parseAbi,
   type Address,
-  type WalletClient,
-  type PublicClient,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
@@ -27,7 +25,7 @@ const GITSTREAM_RECEIVER_ABI = parseAbi([
 /**
  * Create a public client for reading contract data
  */
-export function createPublicClientInstance(): PublicClient {
+export function createPublicClientInstance() {
   return createPublicClient({
     chain: baseSepolia,
     transport: http(config.rpcUrl),
@@ -37,7 +35,7 @@ export function createPublicClientInstance(): PublicClient {
 /**
  * Create a wallet client for writing to contracts
  */
-export function createWalletClientInstance(): WalletClient {
+export function createWalletClientInstance() {
   if (!config.contracts.deployerPrivateKey) {
     throw new Error("Deployer private key not configured");
   }
@@ -70,13 +68,14 @@ export async function registerProjectOnChain(repoUrl: string): Promise<string> {
     abi: GITSTREAM_RECEIVER_ABI,
     functionName: "registerProject",
     args: [repoUrl],
+    chain: baseSepolia,
   });
 
   // Wait for transaction
   await publicClient.waitForTransactionReceipt({ hash });
 
   // Calculate project ID
-  const projectId = await getProjectId(repoUrl, walletClient.account.address);
+  const projectId = await getProjectId(repoUrl, walletClient.account!.address);
 
   return projectId;
 }
@@ -166,6 +165,7 @@ export async function forwardFunds(
     abi: GITSTREAM_RECEIVER_ABI,
     functionName: "forwardFunds",
     args: [projectId as `0x${string}`, recipient, amount],
+    chain: baseSepolia,
   });
 
   await publicClient.waitForTransactionReceipt({ hash });

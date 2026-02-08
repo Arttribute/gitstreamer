@@ -18,7 +18,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,16 +37,22 @@ export default function ContributorsPage() {
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
-  const [contributors, setContributors] = useState<ContributorWithMetrics[]>([]);
+  const [contributors, setContributors] = useState<ContributorWithMetrics[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [assigningTier, setAssigningTier] = useState<string | null>(null);
   const [autoFetching, setAutoFetching] = useState(false);
-  const [githubUser, setGithubUser] = useState<{ login: string; avatar_url: string } | null>(null);
+  const [githubUser, setGithubUser] = useState<{
+    login: string;
+    avatar_url: string;
+  } | null>(null);
   const [loadingGithubUser, setLoadingGithubUser] = useState(true);
 
-  const isOwner = project?.ownerAddress.toLowerCase() === address?.toLowerCase();
+  const isOwner =
+    project?.ownerAddress.toLowerCase() === address?.toLowerCase();
 
   // Get GitHub token from localStorage or URL params
   const getGithubToken = () => {
@@ -117,7 +129,13 @@ export default function ContributorsPage() {
   // Auto-fetch contributors if empty (only for project owners)
   useEffect(() => {
     async function autoFetchContributors() {
-      if (!isOwner || !project || contributors.length > 0 || autoFetching || refreshing) {
+      if (
+        !isOwner ||
+        !project ||
+        contributors.length > 0 ||
+        autoFetching ||
+        refreshing
+      ) {
         return;
       }
 
@@ -131,7 +149,11 @@ export default function ContributorsPage() {
         const accessToken = await getAccessToken();
         if (!accessToken) return;
 
-        const result = await api.contributors.refresh(projectId, accessToken, githubToken);
+        const result = await api.contributors.refresh(
+          projectId,
+          accessToken,
+          githubToken,
+        );
         setContributors(result.contributors);
       } catch (err) {
         console.warn("Auto-fetch contributors failed:", err);
@@ -143,7 +165,14 @@ export default function ContributorsPage() {
 
     autoFetchContributors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner, project, contributors.length, autoFetching, refreshing, projectId]);
+  }, [
+    isOwner,
+    project,
+    contributors.length,
+    autoFetching,
+    refreshing,
+    projectId,
+  ]);
 
   const handleRefresh = async () => {
     if (!isOwner) return;
@@ -162,10 +191,16 @@ export default function ContributorsPage() {
       if (!accessToken) {
         throw new Error("Not authenticated");
       }
-      const result = await api.contributors.refresh(projectId, accessToken, githubToken);
+      const result = await api.contributors.refresh(
+        projectId,
+        accessToken,
+        githubToken,
+      );
       setContributors(result.contributors);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh contributors");
+      setError(
+        err instanceof Error ? err.message : "Failed to refresh contributors",
+      );
     } finally {
       setRefreshing(false);
     }
@@ -192,10 +227,8 @@ export default function ContributorsPage() {
       // Update local state
       setContributors((prev) =>
         prev.map((c) =>
-          c.githubUsername === username
-            ? { ...c, tier: tier || undefined }
-            : c
-        )
+          c.githubUsername === username ? { ...c, tier: tier || undefined } : c,
+        ),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to assign tier");
@@ -205,7 +238,9 @@ export default function ContributorsPage() {
   };
 
   const handleConnectGitHub = () => {
-    const authUrl = api.github.authUrl(`${window.location.origin}/project/${projectId}/contributors`);
+    const authUrl = api.github.authUrl(
+      `${window.location.origin}/project/${projectId}/contributors`,
+    );
     window.location.href = authUrl;
   };
 
@@ -266,7 +301,11 @@ export default function ContributorsPage() {
             </p>
           </div>
           {isOwner && (
-            <Button onClick={handleRefresh} disabled={refreshing} className="gap-2">
+            <Button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="gap-2"
+            >
               {refreshing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -320,29 +359,28 @@ export default function ContributorsPage() {
                 </Button>
               </CardContent>
             </Card>
-          ) : (
-            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-900/20">
-              <CardContent className="flex items-center justify-between px-4 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-yellow-900 dark:text-yellow-100">
-                      GitHub Not Connected
-                    </p>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                      Connect GitHub to fetch and refresh contributors
-                    </p>
-                  </div>
-                </div>
-                <Button onClick={handleConnectGitHub} className="ml-4 gap-2">
-                  <GitBranch className="h-4 w-4" />
-                  Connect GitHub
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          ) : // <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-900/20">
+          //   <CardContent className="flex items-center justify-between px-4 py-4">
+          //     <div className="flex items-center gap-3">
+          //       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900">
+          //         <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+          //       </div>
+          //       <div>
+          //         <p className="font-medium text-yellow-900 dark:text-yellow-100">
+          //           GitHub Not Connected
+          //         </p>
+          //         <p className="text-sm text-yellow-700 dark:text-yellow-400">
+          //           Connect GitHub to fetch and refresh contributors
+          //         </p>
+          //       </div>
+          //     </div>
+          //     <Button onClick={handleConnectGitHub} className="ml-4 gap-2">
+          //       <GitBranch className="h-4 w-4" />
+          //       Connect GitHub
+          //     </Button>
+          //   </CardContent>
+          // </Card>
+          null}
         </div>
       )}
 
@@ -420,7 +458,9 @@ export default function ContributorsPage() {
                       />
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold">{contributor.githubUsername}</p>
+                          <p className="font-semibold">
+                            {contributor.githubUsername}
+                          </p>
                           {contributor.walletAddress && (
                             <Badge variant="success" className="gap-1">
                               <CheckCircle className="h-3 w-3" />
@@ -432,17 +472,20 @@ export default function ContributorsPage() {
                           <div className="mt-1 flex flex-wrap gap-3 text-sm text-zinc-500">
                             <span className="flex items-center gap-1">
                               <GitCommit className="h-3 w-3" />
-                              {contributor.latestMetrics.metrics.commits} commits
+                              {contributor.latestMetrics.metrics.commits}{" "}
+                              commits
                             </span>
                             <span className="flex items-center gap-1">
                               <FileCode className="h-3 w-3" />
-                              {contributor.latestMetrics.metrics.linesOfCode.toLocaleString()} lines
+                              {contributor.latestMetrics.metrics.linesOfCode.toLocaleString()}{" "}
+                              lines
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               Last:{" "}
                               {new Date(
-                                contributor.latestMetrics.metrics.lastContribution
+                                contributor.latestMetrics.metrics
+                                  .lastContribution,
                               ).toLocaleDateString()}
                             </span>
                           </div>
@@ -462,13 +505,20 @@ export default function ContributorsPage() {
                             options={tierOptions}
                             value={contributor.tier || ""}
                             onChange={(e) =>
-                              handleAssignTier(contributor.githubUsername, e.target.value)
+                              handleAssignTier(
+                                contributor.githubUsername,
+                                e.target.value,
+                              )
                             }
-                            disabled={assigningTier === contributor.githubUsername}
+                            disabled={
+                              assigningTier === contributor.githubUsername
+                            }
                           />
                         </div>
                       ) : (
-                        <Badge variant={contributor.tier ? "default" : "outline"}>
+                        <Badge
+                          variant={contributor.tier ? "default" : "outline"}
+                        >
                           {contributor.tier || "Unassigned"}
                         </Badge>
                       )}

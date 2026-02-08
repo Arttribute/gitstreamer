@@ -1,13 +1,9 @@
-import { createPublicClient, http, parseAbiItem, type Log, type Address } from "viem";
+import { createPublicClient, http, parseAbiItem, type Address } from "viem";
 import { baseSepolia } from "viem/chains";
 import { config } from "../../config.js";
 import { getDatabase } from "../../db/client.js";
 import type { Project } from "../../db/models/project.js";
 import type { RevenueEvent } from "../../db/models/revenue.js";
-
-const GITSTREAM_RECEIVER_ABI = [
-  parseAbiItem("event RevenueReceived(bytes32 indexed projectId, address indexed token, uint256 amount, address indexed sender)"),
-];
 
 export interface RevenueReceivedEvent {
   projectId: string;
@@ -76,14 +72,14 @@ async function processBlockRange(
   });
 
   for (const log of logs) {
-    await processRevenueEvent(log);
+    await processRevenueEvent(log as any);
   }
 }
 
 /**
  * Process a single RevenueReceived event
  */
-async function processRevenueEvent(log: Log): Promise<void> {
+async function processRevenueEvent(log: any): Promise<void> {
   try {
     // Decode event data
     const { projectId, token, amount, sender } = log.args as {
@@ -96,6 +92,12 @@ async function processRevenueEvent(log: Log): Promise<void> {
     console.log(`Revenue received for project ${projectId}: ${amount.toString()} from ${sender}`);
 
     const db = await getDatabase();
+
+    // Skip if no transaction hash
+    if (!log.transactionHash) {
+      console.warn("Event has no transaction hash, skipping");
+      return;
+    }
 
     // Check if event already processed (idempotency)
     const existing = await db.collection<RevenueEvent>("revenue").findOne({
@@ -122,7 +124,7 @@ async function processRevenueEvent(log: Log): Promise<void> {
       projectId: project._id!,
       amount: amount.toString(),
       tokenAddress: token,
-      txHash: log.transactionHash!,
+      txHash: log.transactionHash,
       blockNumber: Number(log.blockNumber),
       chainId: config.chainId,
       distributed: false,
@@ -160,7 +162,7 @@ export async function processHistoricalEvents(fromBlock?: bigint): Promise<numbe
   });
 
   for (const log of logs) {
-    await processRevenueEvent(log);
+    await processRevenueEvent(log as any);
   }
 
   console.log(`Processed ${logs.length} historical events`);
