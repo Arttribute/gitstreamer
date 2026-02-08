@@ -32,3 +32,6 @@ coverage
 
 # Misc
 *.tsbuildinfo
+
+IMPLEMENTATION_STATUS.md
+sidequest-plan.md
