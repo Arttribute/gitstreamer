@@ -14,7 +14,6 @@ const GITSTREAM_RECEIVER_ABI = parseAbi([
   "function registerProject(string calldata repoUrl) external returns (bytes32)",
   "function receiveRevenue(bytes32 projectId, uint256 amount) external",
   "function forwardFunds(bytes32 projectId, address recipient, uint256 amount) external",
-  "function getProject(bytes32 projectId) external view returns (tuple(string repoUrl, address owner, bool active))",
   "function getProjectBalance(bytes32 projectId) external view returns (uint256)",
   "function getProjectId(string calldata repoUrl, address owner) external pure returns (bytes32)",
   "event ProjectRegistered(bytes32 indexed projectId, string repoUrl, address indexed owner)",
@@ -98,30 +97,6 @@ export async function getProjectId(repoUrl: string, ownerAddress: Address): Prom
   });
 
   return projectId as string;
-}
-
-/**
- * Get project details from the contract
- */
-export async function getProjectFromContract(projectId: string): Promise<{
-  repoUrl: string;
-  owner: Address;
-  active: boolean;
-}> {
-  const publicClient = createPublicClientInstance();
-
-  if (!config.contracts.gitStreamReceiver) {
-    throw new Error("GitStreamReceiver contract address not configured");
-  }
-
-  const project = await publicClient.readContract({
-    address: config.contracts.gitStreamReceiver as Address,
-    abi: GITSTREAM_RECEIVER_ABI,
-    functionName: "getProject",
-    args: [projectId as `0x${string}`],
-  });
-
-  return project as { repoUrl: string; owner: Address; active: boolean };
 }
 
 /**

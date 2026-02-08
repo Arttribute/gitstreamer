@@ -5,6 +5,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import { projectOwnerMiddleware } from "../middleware/project-owner.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { getYellowClient, createStreamingSession, calculateTierAllocations, getSessionBalance, } from "../services/yellow/streaming.js";
+import { getProjectBalance } from "../services/contracts/interactions.js";
 const streams = new Hono();
 // All stream routes require authentication
 streams.use("/*", authMiddleware);
@@ -21,7 +22,17 @@ streams.get("/project/:id", async (c) => {
     if (!project) {
         throw new NotFoundError("Project not found");
     }
-    // Get total revenue
+    // Get balance from contract if registered
+    let contractBalance = BigInt(0);
+    if (project.projectIdBytes32) {
+        try {
+            contractBalance = await getProjectBalance(project.projectIdBytes32);
+        }
+        catch (err) {
+            console.error("Failed to fetch contract balance:", err);
+        }
+    }
+    // Get database revenue events (for tracking history)
     const totalRevenue = await db
         .collection("revenue")
         .aggregate([
@@ -56,13 +67,18 @@ streams.get("/project/:id", async (c) => {
         },
     ])
         .toArray();
+    // Use contract balance as the source of truth for pending revenue
+    const dbTotalRevenue = BigInt(totalRevenue[0]?.total || 0);
+    const dbDistributedRevenue = BigInt(distributedRevenue[0]?.total || 0);
+    const dbPendingRevenue = dbTotalRevenue - dbDistributedRevenue;
     return c.json({
         projectId,
         yellowSessionId: project.yellowSessionId || null,
         hasActiveSession: !!project.yellowSessionId,
         totalRevenue: totalRevenue[0]?.total?.toString() || "0",
         distributedRevenue: distributedRevenue[0]?.total?.toString() || "0",
-        pendingRevenue: (BigInt(totalRevenue[0]?.total || 0) - BigInt(distributedRevenue[0]?.total || 0)).toString(),
+        pendingRevenue: contractBalance > 0 ? contractBalance.toString() : dbPendingRevenue.toString(),
+        contractBalance: contractBalance.toString(),
         tierConfig: project.tierConfig,
         tierStats: tierStats.map((s) => ({
             tier: s._id,
@@ -130,18 +146,16 @@ streams.post("/project/:id/create", projectOwnerMiddleware, async (c) => {
             walletAddress: contributor.walletAddress,
         });
     }
-    // Calculate pending revenue
-    const pendingRevenue = await db
-        .collection("revenue")
-        .aggregate([
-        { $match: { projectId: project._id, distributed: false } },
-        { $group: { _id: null, total: { $sum: { $toLong: "$amount" } } } },
-    ])
-        .toArray();
-    const totalAmount = BigInt(pendingRevenue[0]?.total || 0);
-    if (totalAmount === 0n) {
-        throw new ValidationError("No pending revenue to distribute");
+    // Check if project is registered onchain
+    if (!project.projectIdBytes32) {
+        throw new ValidationError("Project must be registered onchain before creating a stream");
     }
+    // Get balance from contract
+    const contractBalance = await getProjectBalance(project.projectIdBytes32);
+    if (contractBalance === BigInt(0)) {
+        throw new ValidationError("No revenue available in the contract to distribute");
+    }
+    const totalAmount = contractBalance;
     // Calculate tier allocations
     const allocations = calculateTierAllocations(totalAmount, project.tierConfig, tierMembers);
     // Create Yellow session

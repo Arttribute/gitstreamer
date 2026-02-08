@@ -134,6 +134,7 @@ export interface StreamStatus {
   totalRevenue: string;
   distributedRevenue: string;
   pendingRevenue: string;
+  contractBalance: string;
   tierAllocations: {
     tier: string;
     amount: string;
