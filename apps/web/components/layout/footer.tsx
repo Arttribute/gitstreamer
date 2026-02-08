@@ -10,7 +10,7 @@ export function Footer() {
             <div className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 dark:bg-zinc-100">
               <GitBranch className="h-4 w-4 text-white dark:text-zinc-900" />
             </div>
-            <span className="text-sm font-semibold">GitStream</span>
+            <span className="text-sm font-semibold">GitStreamer</span>
           </div>
 
           <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">

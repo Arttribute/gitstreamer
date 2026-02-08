@@ -18,7 +18,7 @@ export function Header() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-100">
               <GitBranch className="h-5 w-5 text-white dark:text-zinc-900" />
             </div>
-            <span className="text-xl font-bold">GitStream</span>
+            <span className="text-xl font-bold">GitStreamer</span>
           </Link>
 
           <nav className="hidden md:flex md:items-center md:gap-6">
