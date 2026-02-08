@@ -280,12 +280,12 @@ export const api = {
 
   // Claims
   claims: {
-    claim: (accessToken: string, githubToken: string) =>
-      request<{ success: boolean; contributorsUpdated: number }>("/api/claims", {
+    claim: (accessToken: string, githubToken: string, walletAddress: string) =>
+      request<{ success: boolean; message: string; claim: { githubUsername: string; githubId: number; walletAddress: string; claimedAt: string; projectsCount: number } }>("/api/claims", {
         method: "POST",
         accessToken,
         githubToken,
-        body: JSON.stringify({}),
+        body: JSON.stringify({ walletAddress }),
       }),
 
     me: (accessToken: string) =>

@@ -34,9 +34,17 @@ export default function ClaimPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [totalClaimable, setTotalClaimable] = useState<string>("0");
   const [claimResult, setClaimResult] = useState<{
     success: boolean;
-    contributorsUpdated: number;
+    message: string;
+    claim: {
+      githubUsername: string;
+      githubId: number;
+      walletAddress: string;
+      claimedAt: string;
+      projectsCount: number;
+    };
   } | null>(null);
 
   // Update step based on connection state
@@ -106,13 +114,56 @@ export default function ClaimPage() {
     fetchAssignments();
   }, [authenticated, getAccessToken]);
 
+  // Calculate total claimable amount from stream allocations
+  useEffect(() => {
+    if (assignments.length === 0 || !authenticated) return;
+
+    async function calculateClaimable() {
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) return;
+
+        let total = BigInt(0);
+
+        // Fetch stream status for each project assignment
+        for (const assignment of assignments) {
+          try {
+            const streamData = await api.streams.status(assignment.project._id, accessToken);
+
+            // Find the tier allocation for this user's tier
+            const tierAllocation = streamData.tierAllocations.find(
+              (alloc) => alloc.tier === assignment.tier
+            );
+
+            if (tierAllocation && tierAllocation.members > 0) {
+              // Calculate user's share (equal split within tier for now)
+              const tierAmount = BigInt(tierAllocation.amount);
+              const userShare = tierAmount / BigInt(tierAllocation.members);
+              total += userShare;
+            }
+          } catch {
+            // Skip projects with no stream data
+          }
+        }
+
+        // Convert to ETH (from wei)
+        const ethAmount = Number(total) / 1e18;
+        setTotalClaimable(ethAmount.toFixed(6));
+      } catch {
+        // Ignore errors
+      }
+    }
+
+    calculateClaimable();
+  }, [assignments, authenticated, getAccessToken]);
+
   const handleGitHubConnect = () => {
     const authUrl = api.github.authUrl(`${window.location.origin}/claim`);
     window.location.href = authUrl;
   };
 
   const handleClaim = async () => {
-    if (!authenticated || !githubToken) return;
+    if (!authenticated || !githubToken || !address) return;
 
     setLoading(true);
     setError(null);
@@ -123,7 +174,7 @@ export default function ClaimPage() {
         throw new Error("Not authenticated");
       }
 
-      const result = await api.claims.claim(accessToken, githubToken);
+      const result = await api.claims.claim(accessToken, githubToken, address);
       setClaimResult(result);
       setStep("success");
     } catch (err) {
@@ -148,6 +199,23 @@ export default function ClaimPage() {
           Link your GitHub account to your wallet to receive streaming payments
         </p>
       </div>
+
+      {/* Claimable Amount Display */}
+      {assignments.length > 0 && parseFloat(totalClaimable) > 0 && (
+        <Card className="mt-6 border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-900/20">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Total Claimable</p>
+              <p className="mt-1 text-3xl font-bold text-green-600 dark:text-green-400">
+                {totalClaimable} ETH
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Across {assignments.length} project{assignments.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <div className="mt-6 rounded-lg bg-red-50 p-4 text-red-600 dark:bg-red-900/20 dark:text-red-400">
@@ -298,8 +366,11 @@ export default function ClaimPage() {
                   Successfully claimed!
                 </p>
                 <p className="mt-1 text-sm text-green-600 dark:text-green-500">
-                  {claimResult.contributorsUpdated} contribution
-                  {claimResult.contributorsUpdated !== 1 ? "s" : ""} linked to your wallet.
+                  {claimResult.claim.projectsCount} project
+                  {claimResult.claim.projectsCount !== 1 ? "s" : ""} linked to your wallet.
+                </p>
+                <p className="mt-2 text-xs text-green-600 dark:text-green-500">
+                  GitHub: @{claimResult.claim.githubUsername}
                 </p>
               </div>
             </CardContent>

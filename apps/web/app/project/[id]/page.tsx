@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, Project, ContributorWithMetrics } from "@/lib/api";
-import { useRegisterProject } from "@/hooks";
+import { useRegisterProject, useProjectBalance, useCreateStream } from "@/hooks";
 
 export default function ProjectPage() {
   const params = useParams();
@@ -31,6 +31,8 @@ export default function ProjectPage() {
   const { registerProject, isRegistering, error: registerError } = useRegisterProject();
 
   const [project, setProject] = useState<Project | null>(null);
+  const { balance, isLoading: balanceLoading } = useProjectBalance(project?.projectIdBytes32);
+  const { mutate: createStream, isPending: isCreatingStream } = useCreateStream(projectId);
   const [contributors, setContributors] = useState<ContributorWithMetrics[]>([]);
   const [tierSummary, setTierSummary] = useState<
     {
@@ -76,6 +78,22 @@ export default function ProjectPage() {
     } catch (err) {
       console.error("Failed to register onchain:", err);
     }
+  };
+
+  const handleStartStream = async () => {
+    createStream(undefined, {
+      onSuccess: (data) => {
+        // Update local project state with new session ID
+        setProject((prev) =>
+          prev
+            ? {
+                ...prev,
+                yellowSessionId: data.sessionId,
+              }
+            : null
+        );
+      },
+    });
   };
 
   useEffect(() => {
@@ -319,16 +337,20 @@ export default function ProjectPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Min Distribution</CardDescription>
+            <CardDescription>Total Revenue</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-zinc-400" />
-              <span className="text-2xl font-bold">
-                {project.settings.minDistributionAmount}
-              </span>
+              {balanceLoading ? (
+                <Skeleton className="h-8 w-20" />
+              ) : (
+                <span className="text-2xl font-bold">{balance}</span>
+              )}
             </div>
-            <p className="mt-1 text-sm text-zinc-500">USDC threshold</p>
+            <p className="mt-1 text-sm text-zinc-500">
+              {project.onchainRegistered ? "USDC received" : "Register onchain to receive"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -362,9 +384,9 @@ export default function ProjectPage() {
           </Card>
         </Link>
 
-        <Link href={`/project/${projectId}/streams`}>
-          <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
-            <CardHeader>
+        <Card className="h-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
                 Revenue Streams
@@ -372,28 +394,49 @@ export default function ProjectPage() {
               <CardDescription>
                 View payment streams and revenue history
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {project.yellowSessionId ? (
-                <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-                  <p className="font-medium text-green-700 dark:text-green-400">
-                    Streaming session active
-                  </p>
-                  <p className="mt-1 text-sm text-green-600 dark:text-green-500">
-                    Revenue is being distributed to contributors
-                  </p>
-                </div>
-              ) : (
+            </div>
+            <Link href={`/project/${projectId}/streams`}>
+              <Button variant="ghost" size="sm">
+                View Details
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {project.yellowSessionId ? (
+              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
+                <p className="font-medium text-green-700 dark:text-green-400">
+                  Streaming session active
+                </p>
+                <p className="mt-1 text-sm text-green-600 dark:text-green-500">
+                  Revenue is being distributed to contributors
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
                 <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
                   <p className="font-medium">No active stream</p>
                   <p className="mt-1 text-sm text-zinc-500">
-                    Start streaming to distribute revenue
+                    Start streaming to distribute revenue to contributors
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </Link>
+                {isOwner && project.onchainRegistered && (
+                  <Button
+                    onClick={handleStartStream}
+                    disabled={isCreatingStream}
+                    className="w-full"
+                  >
+                    {isCreatingStream ? "Starting Stream..." : "Start Revenue Stream"}
+                  </Button>
+                )}
+                {isOwner && !project.onchainRegistered && (
+                  <p className="text-center text-sm text-zinc-500">
+                    Register project onchain first to enable streaming
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Contributors */}

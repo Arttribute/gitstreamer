@@ -36,3 +36,5 @@ export {
 } from "./useGitHub";
 
 export { useRegisterProject } from "./useRegisterProject";
+
+export { useProjectBalance } from "./useProjectBalance";
