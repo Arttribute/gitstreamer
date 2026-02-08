@@ -51,7 +51,7 @@ export default function ContributorsPage() {
         const accessToken = await getAccessToken();
         const [projectRes, contributorsRes] = await Promise.all([
           api.projects.get(projectId, accessToken || undefined),
-          api.contributors.list(projectId),
+          api.contributors.list(projectId, accessToken || undefined),
         ]);
         setProject(projectRes.project);
         setContributors(contributorsRes.contributors);

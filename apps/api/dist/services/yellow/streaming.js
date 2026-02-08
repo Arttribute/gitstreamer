@@ -7,11 +7,11 @@ let yellowClient = null;
  */
 export async function getYellowClient() {
     if (!yellowClient) {
-        if (!config.yellow.apiKey) {
-            throw new Error("Yellow API key not configured");
+        if (!config.yellow.privateKey) {
+            throw new Error("YELLOW_PRIVATE_KEY not configured. This wallet private key is required to manage Yellow Network state channels.");
         }
-        yellowClient = new YellowClient(config.yellow.apiKey);
-        await yellowClient.connect(true); // Use sandbox by default
+        yellowClient = new YellowClient(config.yellow.privateKey);
+        await yellowClient.connect(config.yellow.useSandbox);
     }
     return yellowClient;
 }

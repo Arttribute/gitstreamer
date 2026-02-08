@@ -5,7 +5,11 @@ import { config } from "../config.js";
 // Initialize Privy client lazily
 let privyClient = null;
 function getPrivyClient() {
-    if (!privyClient && config.privy.appId && config.privy.appSecret) {
+    if (!config.privy.appId || !config.privy.appSecret) {
+        throw new Error("Privy configuration missing. Please set PRIVY_APP_ID and PRIVY_APP_SECRET in your .env file. " +
+            "Get these values from https://dashboard.privy.io");
+    }
+    if (!privyClient) {
         privyClient = new PrivyClient(config.privy.appId, config.privy.appSecret);
     }
     return privyClient;
@@ -14,14 +18,13 @@ function getPrivyClient() {
  * Verify Privy JWT token
  */
 async function verifyPrivyToken(token) {
-    const client = getPrivyClient();
-    if (!client)
-        return null;
     try {
+        const client = getPrivyClient();
         const verifiedClaims = await client.verifyAuthToken(token);
         const user = await client.getUser(verifiedClaims.userId);
         const walletAccount = user.linkedAccounts?.find((account) => account.type === "wallet");
         if (!walletAccount || !("address" in walletAccount)) {
+            console.error("Privy user has no linked wallet account");
             return null;
         }
         return {
@@ -30,7 +33,9 @@ async function verifyPrivyToken(token) {
             authMethod: "privy",
         };
     }
-    catch {
+    catch (error) {
+        // Log detailed error for debugging
+        console.error("Privy token verification failed:", error instanceof Error ? error.message : error);
         return null;
     }
 }
@@ -111,31 +116,51 @@ export async function authMiddleware(c, next) {
     const authHeader = c.req.header("authorization");
     if (authHeader?.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
+        console.log(`[Auth] Attempting Privy token verification for ${c.req.path}`);
         authResult = await verifyPrivyToken(token);
+        if (authResult) {
+            console.log(`[Auth] ✓ Privy auth successful: ${authResult.walletAddress}`);
+        }
+        else {
+            console.log(`[Auth] ✗ Privy token verification failed`);
+        }
     }
     // Try signature-based auth
     if (!authResult) {
         const signature = c.req.header("x-signature");
         const message = c.req.header("x-message");
         if (signature && message) {
+            console.log(`[Auth] Attempting signature-based auth`);
             authResult = await verifySignature(signature, message);
+            if (authResult) {
+                console.log(`[Auth] ✓ Signature auth successful: ${authResult.walletAddress}`);
+            }
         }
     }
     // Try API key
     if (!authResult) {
         const apiKey = c.req.header("x-api-key");
         if (apiKey) {
+            console.log(`[Auth] Attempting API key auth`);
             authResult = await verifyApiKey(apiKey);
+            if (authResult) {
+                console.log(`[Auth] ✓ API key auth successful: ${authResult.walletAddress}`);
+            }
         }
     }
     // Try wallet header (legacy/dev)
     if (!authResult) {
         const walletAddress = c.req.header("x-wallet-address");
         if (walletAddress) {
+            console.log(`[Auth] Attempting wallet header auth`);
             authResult = verifyWalletHeader(walletAddress);
+            if (authResult) {
+                console.log(`[Auth] ✓ Wallet header auth successful: ${authResult.walletAddress}`);
+            }
         }
     }
     if (!authResult) {
+        console.log(`[Auth] ✗ All authentication methods failed for ${c.req.path}`);
         throw new UnauthorizedError("Authentication required");
     }
     // Store auth info in context

@@ -40,8 +40,11 @@ projects.post("/", async (c) => {
     };
     const result = await db.collection("projects").insertOne(project);
     return c.json({
-        id: result.insertedId.toString(),
-        ...project,
+        project: {
+            id: result.insertedId.toString(),
+            _id: result.insertedId.toString(),
+            ...project,
+        },
     }, 201);
 });
 // List user's projects
@@ -81,18 +84,21 @@ projects.get("/:id", async (c) => {
         throw new NotFoundError("Project not found");
     }
     return c.json({
-        id: project._id?.toString(),
-        repoUrl: project.repoUrl,
-        repoOwner: project.repoOwner,
-        repoName: project.repoName,
-        branch: project.branch,
-        ownerAddress: project.ownerAddress,
-        tierConfig: project.tierConfig,
-        settings: project.settings,
-        receiverContract: project.receiverContract,
-        yellowSessionId: project.yellowSessionId,
-        createdAt: project.createdAt,
-        updatedAt: project.updatedAt,
+        project: {
+            id: project._id?.toString(),
+            _id: project._id?.toString(),
+            repoUrl: project.repoUrl,
+            repoOwner: project.repoOwner,
+            repoName: project.repoName,
+            branch: project.branch,
+            ownerAddress: project.ownerAddress,
+            tierConfig: project.tierConfig,
+            settings: project.settings,
+            receiverContract: project.receiverContract,
+            yellowSessionId: project.yellowSessionId,
+            createdAt: project.createdAt,
+            updatedAt: project.updatedAt,
+        },
     });
 });
 // Update project (owner only)
@@ -117,9 +123,25 @@ projects.put("/:id", projectOwnerMiddleware, async (c) => {
         };
     }
     await db.collection("projects").updateOne({ _id: project._id }, { $set: updateData });
+    const updatedProject = await db.collection("projects").findOne({
+        _id: project._id,
+    });
     return c.json({
-        success: true,
-        message: "Project updated",
+        project: {
+            id: updatedProject._id?.toString(),
+            _id: updatedProject._id?.toString(),
+            repoUrl: updatedProject.repoUrl,
+            repoOwner: updatedProject.repoOwner,
+            repoName: updatedProject.repoName,
+            branch: updatedProject.branch,
+            ownerAddress: updatedProject.ownerAddress,
+            tierConfig: updatedProject.tierConfig,
+            settings: updatedProject.settings,
+            receiverContract: updatedProject.receiverContract,
+            yellowSessionId: updatedProject.yellowSessionId,
+            createdAt: updatedProject.createdAt,
+            updatedAt: updatedProject.updatedAt,
+        },
     });
 });
 // Update tier configuration (owner only)
@@ -139,9 +161,25 @@ projects.put("/:id/tiers", projectOwnerMiddleware, async (c) => {
             updatedAt: new Date(),
         },
     });
+    const updatedProject = await db.collection("projects").findOne({
+        _id: project._id,
+    });
     return c.json({
-        success: true,
-        tierConfig,
+        project: {
+            id: updatedProject._id?.toString(),
+            _id: updatedProject._id?.toString(),
+            repoUrl: updatedProject.repoUrl,
+            repoOwner: updatedProject.repoOwner,
+            repoName: updatedProject.repoName,
+            branch: updatedProject.branch,
+            ownerAddress: updatedProject.ownerAddress,
+            tierConfig: updatedProject.tierConfig,
+            settings: updatedProject.settings,
+            receiverContract: updatedProject.receiverContract,
+            yellowSessionId: updatedProject.yellowSessionId,
+            createdAt: updatedProject.createdAt,
+            updatedAt: updatedProject.updatedAt,
+        },
     });
 });
 // Delete project (owner only)

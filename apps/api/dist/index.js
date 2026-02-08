@@ -8,6 +8,7 @@ import { connectToDatabase } from "./db/client.js";
 import { createIndexes } from "./db/indexes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { githubRoutes, projectRoutes, contributorRoutes, tierRoutes, claimRoutes, streamRoutes, } from "./routes/index.js";
+import { authMiddleware } from "./middleware/auth.js";
 const app = new Hono();
 // Global middleware
 app.use("*", logger());
@@ -23,6 +24,15 @@ app.get("/health", (c) => {
     return c.json({
         status: "ok",
         timestamp: new Date().toISOString(),
+    });
+});
+// Debug auth endpoint (for testing Privy authentication)
+app.get("/api/auth/debug", authMiddleware, (c) => {
+    return c.json({
+        authenticated: true,
+        walletAddress: c.get("walletAddress"),
+        userId: c.get("userId"),
+        authMethod: c.get("authMethod"),
     });
 });
 // API routes

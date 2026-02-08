@@ -7,8 +7,13 @@ const CLEARNODE_URLS = {
     sandbox: "wss://clearnet-sandbox.yellow.com/ws",
 };
 /**
- * Yellow Network Client using Nitrolite SDK
+ * Yellow Network Client using Nitrolite SDK (ERC-7824 state channels)
  * Manages WebSocket connection to ClearNode and handles authentication
+ *
+ * Note: No API key is required. Authentication is done via wallet signatures.
+ * The client connects to ClearNode WebSocket endpoints:
+ * - Sandbox (testnet): wss://clearnet-sandbox.yellow.com/ws
+ * - Production: wss://clearnet.yellow.com/ws
  */
 export class YellowClient {
     ws = null;
@@ -20,6 +25,10 @@ export class YellowClient {
     reconnectAttempts = 0;
     maxReconnectAttempts = 5;
     reconnectDelay = 1000;
+    /**
+     * Create a Yellow Network client
+     * @param privateKey - Wallet private key (hex string with or without 0x prefix)
+     */
     constructor(privateKey) {
         this.wallet = new ethers.Wallet(privateKey);
     }

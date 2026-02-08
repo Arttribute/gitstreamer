@@ -59,8 +59,11 @@ projects.post("/", async (c) => {
 
   return c.json(
     {
-      id: result.insertedId.toString(),
-      ...project,
+      project: {
+        id: result.insertedId.toString(),
+        _id: result.insertedId.toString(),
+        ...project,
+      },
     },
     201
   );
@@ -80,11 +83,15 @@ projects.get("/", async (c) => {
   return c.json({
     projects: userProjects.map((p) => ({
       id: p._id?.toString(),
+      _id: p._id?.toString(),
       repoUrl: p.repoUrl,
       repoOwner: p.repoOwner,
       repoName: p.repoName,
       branch: p.branch,
+      ownerAddress: p.ownerAddress,
       tierConfig: p.tierConfig,
+      settings: p.settings,
+      receiverContract: p.receiverContract,
       yellowSessionId: p.yellowSessionId,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
@@ -110,18 +117,21 @@ projects.get("/:id", async (c) => {
   }
 
   return c.json({
-    id: project._id?.toString(),
-    repoUrl: project.repoUrl,
-    repoOwner: project.repoOwner,
-    repoName: project.repoName,
-    branch: project.branch,
-    ownerAddress: project.ownerAddress,
-    tierConfig: project.tierConfig,
-    settings: project.settings,
-    receiverContract: project.receiverContract,
-    yellowSessionId: project.yellowSessionId,
-    createdAt: project.createdAt,
-    updatedAt: project.updatedAt,
+    project: {
+      id: project._id?.toString(),
+      _id: project._id?.toString(),
+      repoUrl: project.repoUrl,
+      repoOwner: project.repoOwner,
+      repoName: project.repoName,
+      branch: project.branch,
+      ownerAddress: project.ownerAddress,
+      tierConfig: project.tierConfig,
+      settings: project.settings,
+      receiverContract: project.receiverContract,
+      yellowSessionId: project.yellowSessionId,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+    },
   });
 });
 
@@ -157,9 +167,26 @@ projects.put("/:id", projectOwnerMiddleware, async (c) => {
     { $set: updateData }
   );
 
+  const updatedProject = await db.collection<Project>("projects").findOne({
+    _id: project._id,
+  });
+
   return c.json({
-    success: true,
-    message: "Project updated",
+    project: {
+      id: updatedProject!._id?.toString(),
+      _id: updatedProject!._id?.toString(),
+      repoUrl: updatedProject!.repoUrl,
+      repoOwner: updatedProject!.repoOwner,
+      repoName: updatedProject!.repoName,
+      branch: updatedProject!.branch,
+      ownerAddress: updatedProject!.ownerAddress,
+      tierConfig: updatedProject!.tierConfig,
+      settings: updatedProject!.settings,
+      receiverContract: updatedProject!.receiverContract,
+      yellowSessionId: updatedProject!.yellowSessionId,
+      createdAt: updatedProject!.createdAt,
+      updatedAt: updatedProject!.updatedAt,
+    },
   });
 });
 
@@ -190,9 +217,26 @@ projects.put("/:id/tiers", projectOwnerMiddleware, async (c) => {
     }
   );
 
+  const updatedProject = await db.collection<Project>("projects").findOne({
+    _id: project._id,
+  });
+
   return c.json({
-    success: true,
-    tierConfig,
+    project: {
+      id: updatedProject!._id?.toString(),
+      _id: updatedProject!._id?.toString(),
+      repoUrl: updatedProject!.repoUrl,
+      repoOwner: updatedProject!.repoOwner,
+      repoName: updatedProject!.repoName,
+      branch: updatedProject!.branch,
+      ownerAddress: updatedProject!.ownerAddress,
+      tierConfig: updatedProject!.tierConfig,
+      settings: updatedProject!.settings,
+      receiverContract: updatedProject!.receiverContract,
+      yellowSessionId: updatedProject!.yellowSessionId,
+      createdAt: updatedProject!.createdAt,
+      updatedAt: updatedProject!.updatedAt,
+    },
   });
 });
 

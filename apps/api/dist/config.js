@@ -14,21 +14,23 @@ export const config = {
         clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
         callbackUrl: process.env.GITHUB_CALLBACK_URL || "http://localhost:3000/api/auth/github/callback",
     },
-    // Yellow Network
+    // Yellow Network (Nitrolite state channels)
     yellow: {
-        apiKey: process.env.YELLOW_API_KEY || "",
-        networkUrl: process.env.YELLOW_NETWORK_URL || "https://testnet.yellow.org",
+        // Private key for the wallet that manages Yellow Network state channels
+        // This wallet will hold funds and sign channel state updates
+        privateKey: process.env.YELLOW_PRIVATE_KEY || "",
+        // Use sandbox (testnet) or production ClearNode
+        useSandbox: process.env.YELLOW_USE_SANDBOX !== "false", // defaults to true
     },
     // Contract addresses
     contracts: {
         gitStreamReceiver: process.env.GITSTREAM_RECEIVER_ADDRESS || "",
         usdc: process.env.USDC_ADDRESS || "",
+        deployerPrivateKey: process.env.DEPLOYER_PRIVATE_KEY || "",
     },
     // Chain config
-    chain: {
-        id: parseInt(process.env.CHAIN_ID || "84532", 10), // Base Sepolia
-        rpcUrl: process.env.RPC_URL || "",
-    },
+    chainId: parseInt(process.env.CHAIN_ID || "84532", 10), // Base Sepolia
+    rpcUrl: process.env.RPC_URL || "https://sepolia.base.org",
     // JWT secret for session tokens
     jwtSecret: process.env.JWT_SECRET || "dev-secret-change-in-production",
     // Frontend URL for CORS

@@ -193,9 +193,10 @@ export const api = {
 
   // Contributors
   contributors: {
-    list: (projectId: string) =>
+    list: (projectId: string, accessToken?: string) =>
       request<{ contributors: ContributorWithMetrics[] }>(
-        `/api/contributors/project/${projectId}`
+        `/api/contributors/project/${projectId}`,
+        { accessToken }
       ),
 
     refresh: (projectId: string, accessToken: string, githubToken: string) =>
@@ -208,22 +209,25 @@ export const api = {
         }
       ),
 
-    get: (projectId: string, username: string) =>
+    get: (projectId: string, username: string, accessToken?: string) =>
       request<{ contributor: Contributor; metricsHistory: ContributorMetrics[] }>(
-        `/api/contributors/project/${projectId}/${username}`
+        `/api/contributors/project/${projectId}/${username}`,
+        { accessToken }
       ),
   },
 
   // Tiers
   tiers: {
-    get: (projectId: string) =>
+    get: (projectId: string, accessToken?: string) =>
       request<{ tierConfig: Project["tierConfig"] }>(
-        `/api/tiers/project/${projectId}`
+        `/api/tiers/project/${projectId}`,
+        { accessToken }
       ),
 
-    getMembers: (projectId: string, tierName: string) =>
+    getMembers: (projectId: string, tierName: string, accessToken?: string) =>
       request<{ members: Contributor[] }>(
-        `/api/tiers/project/${projectId}/${encodeURIComponent(tierName)}/members`
+        `/api/tiers/project/${projectId}/${encodeURIComponent(tierName)}/members`,
+        { accessToken }
       ),
 
     assign: (
@@ -250,11 +254,18 @@ export const api = {
         }
       ),
 
-    summary: (projectId: string) =>
+    summary: (projectId: string, accessToken?: string) =>
       request<{
-        summary: { tier: string; count: number; revenueShare: number }[];
-        unassigned: number;
-      }>(`/api/tiers/project/${projectId}/summary`),
+        projectId: string;
+        tiers: {
+          name: string;
+          revenueShare: number;
+          splitMethod: string;
+          memberCount: number;
+          claimedCount: number;
+        }[];
+        treasuryShare: number;
+      }>(`/api/tiers/project/${projectId}/summary`, { accessToken }),
   },
 
   // Claims

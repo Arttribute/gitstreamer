@@ -10,7 +10,8 @@ github.get("/auth", async (c) => {
     const returnUrl = c.req.query("returnUrl");
     const state = await createOAuthState(walletAddress, returnUrl);
     const authUrl = getOAuthUrl(state);
-    return c.json({ authUrl, state });
+    // Redirect directly to GitHub OAuth page
+    return c.redirect(authUrl);
 });
 // Handle GitHub OAuth callback
 github.get("/callback", async (c) => {
@@ -63,12 +64,12 @@ github.get("/repos", githubAuthMiddleware, async (c) => {
         repos: repos.map((repo) => ({
             id: repo.id,
             name: repo.name,
-            fullName: repo.full_name,
-            owner: repo.owner.login,
+            full_name: repo.full_name,
+            owner: { login: repo.owner.login },
             private: repo.private,
-            url: repo.html_url,
+            html_url: repo.html_url,
             description: repo.description,
-            defaultBranch: repo.default_branch,
+            default_branch: repo.default_branch,
         })),
     });
 });

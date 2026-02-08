@@ -29,9 +29,14 @@ export default function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [contributors, setContributors] = useState<ContributorWithMetrics[]>([]);
   const [tierSummary, setTierSummary] = useState<
-    { tier: string; count: number; revenueShare: number }[]
+    {
+      name: string;
+      revenueShare: number;
+      splitMethod: string;
+      memberCount: number;
+      claimedCount: number;
+    }[]
   >([]);
-  const [unassigned, setUnassigned] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,13 +48,12 @@ export default function ProjectPage() {
         const accessToken = await getAccessToken();
         const [projectRes, contributorsRes, summaryRes] = await Promise.all([
           api.projects.get(projectId, accessToken || undefined),
-          api.contributors.list(projectId),
-          api.tiers.summary(projectId),
+          api.contributors.list(projectId, accessToken || undefined),
+          api.tiers.summary(projectId, accessToken || undefined),
         ]);
         setProject(projectRes.project);
         setContributors(contributorsRes.contributors);
-        setTierSummary(summaryRes.summary);
-        setUnassigned(summaryRes.unassigned);
+        setTierSummary(summaryRes.tiers);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load project");
       } finally {
@@ -148,9 +152,9 @@ export default function ProjectPage() {
               <Users className="h-5 w-5 text-zinc-400" />
               <span className="text-2xl font-bold">{contributors.length}</span>
             </div>
-            {unassigned > 0 && (
+            {contributors.filter((c) => !c.tier).length > 0 && (
               <p className="mt-1 text-sm text-yellow-600 dark:text-yellow-400">
-                {unassigned} unassigned
+                {contributors.filter((c) => !c.tier).length} unassigned
               </p>
             )}
           </CardContent>
@@ -215,10 +219,10 @@ export default function ProjectPage() {
             <CardContent>
               <div className="space-y-2">
                 {tierSummary.map((tier) => (
-                  <div key={tier.tier} className="flex items-center justify-between text-sm">
-                    <span>{tier.tier}</span>
+                  <div key={tier.name} className="flex items-center justify-between text-sm">
+                    <span>{tier.name}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-500">{tier.count} members</span>
+                      <span className="text-zinc-500">{tier.memberCount} members</span>
                       <Badge variant="outline">{tier.revenueShare}%</Badge>
                     </div>
                   </div>

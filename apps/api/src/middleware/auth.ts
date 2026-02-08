@@ -149,7 +149,13 @@ export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
+    console.log(`[Auth] Attempting Privy token verification for ${c.req.path}`);
     authResult = await verifyPrivyToken(token);
+    if (authResult) {
+      console.log(`[Auth] ✓ Privy auth successful: ${authResult.walletAddress}`);
+    } else {
+      console.log(`[Auth] ✗ Privy token verification failed`);
+    }
   }
 
   // Try signature-based auth
@@ -157,7 +163,11 @@ export async function authMiddleware(c: Context, next: Next) {
     const signature = c.req.header("x-signature");
     const message = c.req.header("x-message");
     if (signature && message) {
+      console.log(`[Auth] Attempting signature-based auth`);
       authResult = await verifySignature(signature, message);
+      if (authResult) {
+        console.log(`[Auth] ✓ Signature auth successful: ${authResult.walletAddress}`);
+      }
     }
   }
 
@@ -165,7 +175,11 @@ export async function authMiddleware(c: Context, next: Next) {
   if (!authResult) {
     const apiKey = c.req.header("x-api-key");
     if (apiKey) {
+      console.log(`[Auth] Attempting API key auth`);
       authResult = await verifyApiKey(apiKey);
+      if (authResult) {
+        console.log(`[Auth] ✓ API key auth successful: ${authResult.walletAddress}`);
+      }
     }
   }
 
@@ -173,11 +187,16 @@ export async function authMiddleware(c: Context, next: Next) {
   if (!authResult) {
     const walletAddress = c.req.header("x-wallet-address");
     if (walletAddress) {
+      console.log(`[Auth] Attempting wallet header auth`);
       authResult = verifyWalletHeader(walletAddress);
+      if (authResult) {
+        console.log(`[Auth] ✓ Wallet header auth successful: ${authResult.walletAddress}`);
+      }
     }
   }
 
   if (!authResult) {
+    console.log(`[Auth] ✗ All authentication methods failed for ${c.req.path}`);
     throw new UnauthorizedError("Authentication required");
   }
 
